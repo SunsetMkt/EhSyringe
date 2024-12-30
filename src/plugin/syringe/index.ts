@@ -1,4 +1,4 @@
-import { isEx, isEh } from 'utils/hosts';
+import { isEx, isEh, isRepo } from 'utils/hosts';
 import { ready } from 'utils/dom';
 import { Service } from 'services';
 import { UiTranslation } from 'services/ui-translation';
@@ -22,7 +22,56 @@ function isText(node: Node | undefined): node is Text {
     return node != null && node.nodeType === Node.TEXT_NODE;
 }
 
+function childNodes(node: Node): Node[] {
+    const iterator = document.createNodeIterator(node);
+    const nodes: Node[] = [];
+    let childNode = iterator.nextNode();
+    while (childNode) {
+        nodes.push(childNode);
+        childNode = iterator.nextNode();
+    }
+    return nodes;
+}
+
+const skipNodeName = new Set<string>(['TITLE', 'LINK', 'META', 'HEAD', 'SCRIPT', 'BR', 'HR', 'STYLE', 'MARK']);
+const ignoreClassName = `eh-syringe-ignore`;
+const skipElementMatcher = `.${ignoreClassName}, .${ignoreClassName} *`;
+
+declare global {
+    interface Window {
+        toggle_advsearch_pane: (b: HTMLElement) => void;
+        toggle_filesearch_pane: (b: HTMLElement) => void;
+        show_advsearch_pane: (b: HTMLElement) => void;
+        hide_advsearch_pane: (b: HTMLElement) => void;
+        show_filesearch_pane: (b: HTMLElement) => void;
+        hide_filesearch_pane: (b: HTMLElement) => void;
+    }
+}
+// 该方案同时在 V2、V3 和 UserScript 生效
+// 注意 actualCode 是在事件回调内部运行的，要挂载变量需要显式写 `window.varName = xxx`
+function codePatch(window: Window): void {
+    window.toggle_advsearch_pane = function toggle_advsearch_pane(b) {
+        if (document.getElementById('advdiv')!.style.display === 'none') {
+            window.show_advsearch_pane(b);
+        } else {
+            window.hide_advsearch_pane(b);
+        }
+    };
+    window.toggle_filesearch_pane = function toggle_filesearch_pane(b) {
+        if (document.getElementById('fsdiv')!.style.display === 'none') {
+            window.show_filesearch_pane(b);
+        } else {
+            window.hide_filesearch_pane(b);
+        }
+    };
+}
+
 class TagNodeRef {
+    static attached(node: Text | HTMLElement): boolean {
+        const parentElement = isText(node) ? node.parentElement : node;
+        if (!parentElement) return false;
+        return parentElement.hasAttribute(this.ATTR);
+    }
     private static readonly ATTR = 'ehs-tag';
 
     static create(node: Text | HTMLElement, service: Syringe): TagNodeRef | boolean {
@@ -35,7 +84,7 @@ class TagNodeRef {
 
         let fullKeyCandidate: string | undefined;
         if (aTitle) {
-            const [namespace, key] = aTitle.split(':');
+            const [namespace, key] = aTitle.includes(':') ? aTitle.split(':') : ['', aTitle];
             fullKeyCandidate = service.tagging.fullKey({ namespace, key });
         } else if (aId) {
             let id = aId;
@@ -85,11 +134,13 @@ class TagNodeRef {
             return false;
         }
         value = this.service.tagging.markImagesAndEmoji(value);
-        if (this.original[1] === ':') {
-            value = `${this.original[0]}:${value}`;
+        if (this.original.includes(':')) {
+            const originalNs = this.original.split(':')[0];
+            if (!originalNs) value = `:${value}`;
+            else value = `${this.service.tagging.ns(originalNs)}:${value}`;
         }
         this.node.innerHTML = value;
-        this.node.setAttribute('lang', 'cmn-Hans');
+        this.node.setAttribute('lang', 'zh-hans');
         return true;
     }
 }
@@ -121,7 +172,6 @@ export class Syringe {
         tags.forEach((t) => t.translate(tagMap));
     }
     documentEnd = false;
-    readonly skipNode: Set<string> = new Set(['TITLE', 'LINK', 'META', 'HEAD', 'SCRIPT', 'BR', 'HR', 'STYLE', 'MARK']);
     config = this.getAndInitConfig();
     observer?: MutationObserver;
 
@@ -145,61 +195,48 @@ export class Syringe {
     }
 
     private codePatch(): void {
-        // 该方案同时在 V2、V3 和 UserScript 生效
-        // 注意 actualCode 是在事件回调内部运行的，要挂载变量需要显式写 `window.varName = xxx`
-        const actualCode = `
-            window.toggle_advsearch_pane = function toggle_advsearch_pane(b) {
-                document.getElementById('advdiv').style.display == 'none' ? show_advsearch_pane(b) : hide_advsearch_pane(b);
-            }
-            window.toggle_filesearch_pane = function toggle_filesearch_pane(b) {
-                document.getElementById('fsdiv').style.display == 'none' ? show_filesearch_pane(b) : hide_filesearch_pane(b);
-            }
-            `;
+        const { documentElement } = document;
+        documentElement.setAttribute('onreset', `;(${codePatch.toString()})(window); return false;`);
+        documentElement.dispatchEvent(new Event('reset'));
+        documentElement.removeAttribute('onreset');
+    }
 
-        document.documentElement.setAttribute('onreset', actualCode);
-        document.documentElement.dispatchEvent(new Event('reset'));
-        document.documentElement.removeAttribute('onreset');
+    private onObserved(mutations: readonly MutationRecord[]): void {
+        for (const mutation of mutations) {
+            if (mutation.type === 'attributes') {
+                this.translateNode(mutation.target);
+                continue;
+            }
+            for (const node of mutation.addedNodes) {
+                this.translateNode(node);
+                if (this.documentEnd) {
+                    const nodes = childNodes(node);
+                    for (const childNode of nodes) {
+                        this.translateNode(childNode);
+                    }
+                }
+            }
+        }
     }
 
     private init(): void {
         ready(() => {
-            this.documentEnd = true;
+            this.onObserved(this.observer?.takeRecords() ?? []);
             this.codePatch();
+            this.documentEnd = true;
         });
         this.setRootAttrs();
-        const body = document.body;
+        const { body } = document;
         if (body) {
-            const nodes: Node[] = [];
-            const nodeIterator = document.createNodeIterator(body);
-            let node = nodeIterator.nextNode();
-            while (node) {
-                nodes.push(node);
+            const nodes = childNodes(body);
+            this.logger.warn(`有 ${nodes.length} 个节点在注入前加载`, nodes);
+            for (const node of nodes) {
                 this.translateNode(node);
-                node = nodeIterator.nextNode();
             }
-            this.logger.debug(`有 ${nodes.length} 个节点在注入前加载`, nodes);
         } else {
             this.logger.debug(`没有节点在注入前加载`);
         }
-        this.observer = new MutationObserver((mutations) => {
-            for (const mutation of mutations) {
-                if (mutation.type === 'attributes') {
-                    this.translateNode(mutation.target);
-                } else {
-                    for (const node of mutation.addedNodes) {
-                        this.translateNode(node);
-                        if (this.documentEnd && node.childNodes) {
-                            const nodeIterator = document.createNodeIterator(node);
-                            let childNode = nodeIterator.nextNode();
-                            while (childNode) {
-                                this.translateNode(childNode);
-                                childNode = nodeIterator.nextNode();
-                            }
-                        }
-                    }
-                }
-            }
-        });
+        this.observer = new MutationObserver((mutations) => this.onObserved(mutations));
         this.observer.observe(document.documentElement, {
             attributeFilter: ['title', 'placeholder', 'label', 'value'],
             childList: true,
@@ -247,20 +284,23 @@ export class Syringe {
     setRootAttrs(): void {
         const node = document.documentElement;
         if (!node) return;
+
+        node.classList.remove(...[...node.classList.values()].filter((k) => k.startsWith('ehs')));
+        node.classList.add('ehs-injected');
         if (isEx(location.hostname)) {
-            node.classList.add('ex');
+            node.classList.add('ehs-ex');
         } else if (isEh(location.hostname)) {
-            node.classList.add('eh');
+            node.classList.add('ehs-eh');
+        } else if (isRepo(location.hostname)) {
+            node.classList.add('ehs-repo');
         } else if ('matchMedia' in window) {
             const matchesDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
             if (matchesDarkTheme) {
-                node.classList.add('ex');
+                node.classList.add('ehs-ex');
             } else {
-                node.classList.add('eh');
+                node.classList.add('ehs-eh');
             }
         }
-
-        node.classList.remove(...[...node.classList.values()].filter((k) => k.startsWith('ehs')));
         if (!this.config.showIcon) {
             node.classList.add('ehs-hide-icon');
         }
@@ -268,7 +308,7 @@ export class Syringe {
             node.classList.add('ehs-translate-tag');
         }
         if (this.config.translateUi) {
-            node.setAttribute('lang', 'cmn-Hans');
+            node.setAttribute('lang', 'zh-hans');
         } else {
             node.setAttribute('lang', 'en');
         }
@@ -276,24 +316,31 @@ export class Syringe {
     }
 
     translateNode(node: Node): void {
-        if (
-            !node.nodeName ||
-            this.skipNode.has(node.nodeName) ||
-            (node.parentNode != null && this.skipNode.has(node.parentNode.nodeName)) ||
-            (isElement(node) && node.matches('.eh-syringe-ignore, .eh-syringe-ignore *'))
-        ) {
+        const { nodeName } = node;
+        if (!nodeName || skipNodeName.has(nodeName)) return;
+        if (node.parentNode && skipNodeName.has(node.parentNode.nodeName)) return;
+        if (isElement(node) ? node.matches(skipElementMatcher) : node.parentElement?.matches(skipElementMatcher)) {
             return;
         }
 
         const handled = this.translateTag(node);
         /* tag 处理过的ui不再处理*/
-        if (!handled && this.config.translateUi) {
+        if (!handled && (this.config.translateUi || this.config.translateTimestamp)) {
             this.translateUi(node);
         }
     }
 
     private isTagContainer(node: Element | null): boolean {
         if (!node) {
+            return false;
+        }
+        if (isElement(node, 'a') && node.href.startsWith('https://e-hentai.org/tag/')) {
+            const url = new URL(node.href);
+            const urlTag = decodeURIComponent(url.pathname.split('/').pop()!).replace(/_/g, ' ').replace(/\+/g, ' ');
+            if (urlTag === node.textContent) {
+                node.title = node.textContent ?? '';
+                return true;
+            }
             return false;
         }
         return node.classList.contains('gt') || node.classList.contains('gtl') || node.classList.contains('gtw');
@@ -315,6 +362,8 @@ export class Syringe {
             ref = TagNodeRef.create(elTrans, this) as TagNodeRef;
         } else if (!isText(node) || !parentElement) {
             return false;
+        } else if (TagNodeRef.attached(node)) {
+            return true;
         } else if (parentElement.nodeName === 'MARK' || parentElement.classList.contains('auto-complete-text')) {
             // 不翻译搜索提示的内容
             return true;
@@ -333,27 +382,46 @@ export class Syringe {
     }
 
     private translateUiText(text: string): string | undefined {
-        const plain = this.uiData.plainReplacements.get(text);
-        if (plain != null) return plain;
-
         let repText = text;
-        for (const [k, v] of this.uiData.regexReplacements) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            repText = repText.replace(k, v as (substring: string, ...args: any[]) => string);
+
+        if (this.config.translateUi) {
+            const plain = this.uiData.plainReplacements.get(text);
+            if (plain != null) return plain;
+
+            for (const [k, v] of this.uiData.regexReplacements) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                repText = repText.replace(k, v as (substring: string, ...args: any[]) => string);
+            }
         }
 
-        if (this.config.translateTimestamp !== false) {
-            repText = repText.replace(/\d\d\d\d-\d\d-\d\d \d\d:\d\d/g, (t) => {
-                const date = Date.parse(t + 'Z');
-                if (!date) return t;
-                return `${this.time.diff(date, undefined, DateTime.hour)}`;
-            });
+        if (
+            this.config.translateTimestamp &&
+            // 快速判断是否有可能包含时间戳
+            repText.includes(':')
+        ) {
             repText = repText.replace(
-                /\d\d (January|February|March|April|May|June|July|August|September|October|November|December) \d\d\d\d, \d\d:\d\d/gi,
-                (t) => {
-                    const date = Date.parse(t + ' UTC');
-                    if (!date) return t;
-                    return `${this.time.diff(date, undefined, DateTime.hour)}`;
+                /(\d\d\d\d-[0-1][0-9]-[0-3][0-9] [0-2][0-9]:[0-5][0-9](:[0-5][0-9])?)( UTC)?/g,
+                ($, t, seconds) => {
+                    const date = Date.parse(t + 'Z');
+                    if (!date) return $;
+                    if (seconds) return this.time.absolute(date, true);
+                    return this.time.diff(date, undefined, DateTime.hour);
+                },
+            );
+            repText = repText.replace(
+                /([0-3][0-9]|[1-9]) (January|February|March|April|May|June|July|August|September|October|November|December) (\d\d\d\d), ([0-2][0-9]:[0-5][0-9])( UTC)?/gi,
+                ($, d, m, y, t) => {
+                    const date = Date.parse(`${d} ${m} ${y}, ${t} UTC`);
+                    if (!date) return $;
+                    return this.time.diff(date, undefined, DateTime.hour);
+                },
+            );
+            repText = repText.replace(
+                /(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), ([0-3][0-9]|[1-9])(st|nd|rd|th) of (January|February|March|April|May|June|July|August|September|October|November|December) (\d\d\d\d), ([0-2][0-9]:[0-5][0-9])( UTC)?/gi,
+                ($, _w, d, _do, m, y, t) => {
+                    const date = Date.parse(`${d} ${m} ${y}, ${t} UTC`);
+                    if (!date) return $;
+                    return this.time.diff(date, undefined, DateTime.hour);
                 },
             );
         }
@@ -377,17 +445,30 @@ export class Syringe {
             }
             return;
         }
-        if (isElement(node, 'input') || isElement(node, 'textarea')) {
-            if (node.placeholder) {
-                const translation = this.translateUiText(node.placeholder);
-                if (translation != null) {
-                    node.placeholder = translation;
+        if (isElement(node, 'input') && (node.type === 'submit' || node.type === 'button' || node.type === 'reset')) {
+            // 将 input[type=submit] 等按钮替换为 button[ehs-input]，避免 value 属性被翻译导致提交内容错误
+            const translation = this.translateUiText(node.value);
+            if (translation != null) {
+                const button = document.createElement('button');
+                for (const attr of node.attributes) {
+                    button.setAttribute(attr.name, attr.value);
                 }
-            } else if (node.type === 'submit' || node.type === 'button') {
-                const translation = this.translateUiText(node.value);
-                if (translation != null) {
-                    node.value = translation;
-                }
+                button.setAttribute('ehs-input', '');
+                button.textContent = translation;
+                node.replaceWith(button);
+            }
+            return;
+        }
+        if (isElement(node, 'button') && node.hasAttribute('ehs-input')) {
+            // 响应 button[ehs-input] 的 value 变更
+            const translation = this.translateUiText(node.value);
+            node.textContent = translation ?? node.value;
+            return;
+        }
+        if ((isElement(node, 'input') || isElement(node, 'textarea')) && node.placeholder) {
+            const translation = this.translateUiText(node.placeholder);
+            if (translation != null) {
+                node.placeholder = translation;
             }
             return;
         }
@@ -408,7 +489,7 @@ export class Syringe {
         }
 
         if (isElement(node, 'p') && node.classList.contains('gpc')) {
-            /* 兼容熊猫书签，单独处理页码，保留原页码Element，防止熊猫书签取不到报错 */
+            /* 兼容熊猫书签，单独处理页码，保留原页码 Element，防止熊猫书签取不到报错 */
             this.cloneAndPrependElement(node);
         }
 
@@ -418,10 +499,11 @@ export class Syringe {
         }
     }
 
-    private cloneAndPrependElement<T extends Element>(el: T): T {
-        const clone = el.cloneNode(true) as T;
-        clone.classList.add('eh-syringe-ignore');
+    private cloneAndPrependElement<E extends Element, C extends Element = E>(el: E, cloneNode?: (el: E) => C): C {
+        const clone = cloneNode ? cloneNode(el) : (el.cloneNode(true) as C);
+        clone.classList.add(ignoreClassName);
         clone.setAttribute('hidden', '');
+        if (clone.id) clone.id = `ehs-clone-${clone.id}`;
         clone.querySelectorAll('[id]').forEach((node) => {
             node.id = `ehs-clone-${node.id}`;
         });

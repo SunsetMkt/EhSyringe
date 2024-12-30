@@ -1,6 +1,6 @@
 # EhSyringe
 
-[![Build Status](https://github.com/EhTagTranslation/EhSyringe/workflows/build/badge.svg)](../../actions)
+[![Build Status](https://github.com/EhTagTranslation/EhSyringe/workflows/ci/badge.svg)](../../actions)
 
 [![GitHub All Releases](https://img.shields.io/github/downloads/EhTagTranslation/EhSyringe/total)](../../releases)
 [![GitHub Releases (by Asset)](https://img.shields.io/github/downloads/EhTagTranslation/EhSyringe/latest/ehsyringe.chrome.zip)](../../releases/latest/download/ehsyringe.chrome.zip)
@@ -11,7 +11,7 @@ E 站注射器，将中文翻译注入到 E 站体内。
 
 这一针打下去你就会说中文了。
 
-![image](https://user-images.githubusercontent.com/5716100/62419351-be9d7400-b6b0-11e9-86d3-680436973176.png)
+![Syringe](https://user-images.githubusercontent.com/5716100/62419351-be9d7400-b6b0-11e9-86d3-680436973176.png)
 
 ## 安装
 
@@ -53,17 +53,17 @@ E 站注射器，将中文翻译注入到 E 站体内。
 
 ## 功能
 
--   全站翻译（大部分)
--   TAG 翻译
--   TAG 介绍
--   TAG 翻译数据更新（当前[数据库](https://ehtt.vercel.app/list/all)包含 [![all](https://img.shields.io/endpoint?label=&color=brightgreen&url=https://ehtt.fly.dev/database/all/~badge)](https://ehtt.vercel.app/list/all) 条标签翻译）
--   搜索框 TAG 输入提示
--   支持 Via、Alook 等支持自定义脚本的手机浏览器
+- 全站翻译（大部分）
+- 标签翻译
+- 标签介绍
+- 标签翻译数据更新（当前[数据库](https://ehtt.vercel.app/list/all)包含 [![all](https://img.shields.io/endpoint?label=&color=brightgreen&url=https://ehtt.fly.dev/database/all/~badge)](https://ehtt.vercel.app/list/all) 条标签翻译）
+- 搜索框标签输入提示
+- 支持 Via、Alook 等支持自定义脚本的手机浏览器
 
 ## 特点
 
--   兼容 E-Hentai-Downloader 及熊猫书签
--   在加载 DOM 过程替换翻译, 页面加载完直接是中文不会闪烁
+- 兼容 E-Hentai-Downloader 及熊猫书签
+- 在加载 DOM 过程替换翻译, 页面加载完直接是中文不会闪烁
 
 ## 截图预览
 
@@ -88,7 +88,7 @@ E 站注射器，将中文翻译注入到 E 站体内。
 
 ## 小工具
 
--   用户脚本脚本小工具合集 [EhTagTranslation/UserScripts](../../../UserScripts)
+- 用户脚本脚本小工具合集 [EhTagTranslation/UserScripts](../../../UserScripts)
 
 ## [更新日志](CHANGELOG.md)
 
@@ -96,7 +96,7 @@ E 站注射器，将中文翻译注入到 E 站体内。
 
 ### 开发指南
 
--   UI 翻译位于 `src/services/ui-translation/data`
+- UI 翻译位于 `src/services/ui-translation/data`
 
 ### 发布新版本
 

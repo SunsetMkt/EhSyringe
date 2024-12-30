@@ -33,6 +33,7 @@ merge(
 
         Front: '首页',
         LoFi: '低保真版',
+        'Terms of Service': '服务条款',
         ToS: '服务条款',
         Advertise: '广告',
         Onion: '洋葱网址',
@@ -86,17 +87,21 @@ merge(
 
         'The keyword ': '关键词 ',
         ' is short and will be searched as an exact tag only.': ' 太短，因此只会搜索精确匹配的标签。',
-        'The term ': '关键词 ',
-        ' uses unsupported syntax or is otherwise not valid.': ' 无效或使用了不支持的语法。',
+        'Some terms use unsupported syntax, are too short, or are otherwise not valid.':
+            '某些关键词使用了不支持的语法、太短或无效。',
         'The provided date is invalid or outside the range of posted galleries.':
             '提供的日期无效或超出已发布图库的日期范围。',
-        'The page range minimum cannot be above 1000.': '页数最小值最多为 1000。',
+        'The page range minimum cannot be above 1000.': '页数最小值至多为 1000。',
         'The page range maximum cannot be below 10.': '页数最大值至少为 10。',
-        'Your page range filter is too narrow.': '页数范围差至少为 20。',
+        'Your page range filter is too narrow.': '页数范围差至少为 20，范围比至多为 0.8。',
+        'You provided too many keywords. Use fewer keywords, or combine keywords with quotes.':
+            '使用的关键词过多。请减少关键词或使用引号组合关键词。',
         'You provided too many keywords. Use fewer keywords, or combine keywords with quotes. (Ignored ':
             '使用的关键词过多。请减少关键词或使用引号组合关键词。(已忽略 ',
         'No hits found': '什么也没有',
         'No unfiltered results found.': '没有未过滤的结果',
+        'No unfiltered results in this page range. Use less aggressive filters.':
+            '在此页数范围内没有未过滤的结果。请使用更宽松的过滤器。',
         'Disable Filters': '禁用过滤器',
 
         '<< First': '<< 首页',
@@ -110,7 +115,7 @@ merge(
         'Last >>': '末页 >>',
         'date or offset': '日期或偏移量',
         'Enter a year or date in YYYY, (YY)YY-MM or (YY)YY-MM-DD format to seek to, or the number of days to jump backwards or forwards, or a number followed by w, m and y to jump weeks, months or years respectively.':
-            '请输入要跳转的年份或日期，格式为 YYYY，(YY)YY-MM 或 (YY)YY-MM-DD；\r或者输入要向前或向后跳转的天数，输入数字后可以加 w，m，y 分别跳转周，月，年',
+            '请输入要跳转的年份或日期，格式为 YYYY，(YY)YY-MM 或 (YY)YY-MM-DD；\n或者输入要向前或向后跳转的天数，输入数字后可以加 w，m，y 分别跳转周，月，年',
         'Set the date to seek from or to.': '设置要跳转的日期',
         'Use Date Selector': '日期选择器',
 
@@ -171,6 +176,7 @@ merge(
         Cancel: '取消',
         Close: '关闭',
         Confirm: '确定',
+        Delete: '删除',
         Save: '保存',
         None: '无',
         Yes: '是',
@@ -185,6 +191,18 @@ merge(
         'The site is currently in Read Only Mode. This page is therefore not available.':
             '网站当前处于只读模式，因此本页面不可用。',
         'This content is not available in Russia.RU': '此内容在俄罗斯 (RU) 不可用',
+
+        // 洋葱网址登录页
+        'user:': '用户：',
+        'pass:': '密码：',
+        'code:': '代码：',
+        username: '用户名',
+        password: '密码',
+        CPTCA: '验证码',
+        'Fuck Off': '刷新',
+        'Log In': '登录',
+        'You have to complete every field': '您必须填完每个字段',
+        'Please try again': '请再试一次',
     },
     [
         [/^(\d+) pages?$/, '$1 页'],

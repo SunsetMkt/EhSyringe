@@ -46,7 +46,7 @@ export interface StorageItems {
 @Service()
 export class Storage {
     constructor(readonly logger: Logger) {
-        Object.defineProperty(globalThis, 'storage', {
+        Object.defineProperty(globalThis, '__eh_storage__', {
             value: () => {
                 (async () => {
                     const keys = await this.keys();
@@ -77,7 +77,7 @@ export class Storage {
 
     on<T extends keyof StorageItems>(
         key: T,
-        listener: (key: T, oldValue?: StorageItems[T] | undefined, newValue?: StorageItems[T] | undefined) => unknown,
+        listener: (key: T, oldValue: StorageItems[T] | undefined, newValue: StorageItems[T] | undefined) => unknown,
     ): ListenerId {
         return storage.on(key, listener as Listener);
     }

@@ -9,27 +9,32 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: releases
+          name: docs
           path: |
             README.md
             README.userscript.md
             LICENSE
       - name: Install
-        uses: NullVoxPopuli/action-setup-pnpm@v2
-        with:
-          node-version: 18
-          pnpm-version: 8
+        uses: wyvox/action-setup-pnpm@v3
       - name: Build
         run: |
           pnpm run build:firefox
           pnpm run build:chrome
           pnpm run build:monkey
-      - uses: actions/upload-artifact@v3
+      - uses: actions/attest-build-provenance@v2
+        if: startsWith(github.event.ref, 'refs/tags/')
+        with:
+          subject-path: releases/
+      - uses: actions/upload-artifact@v4
         with:
           name: releases
           path: releases/
@@ -44,7 +49,11 @@ jobs:
         with:
           ref: release
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
+        with:
+          name: docs
+      - name: Download artifact
+        uses: actions/download-artifact@v4
         with:
           name: releases
       - name: Generate checksum
@@ -52,7 +61,7 @@ jobs:
           sha256sum * > sha256sum.txt
           cat sha256sum.txt
       - name: Publish github release
-        uses: ncipollo/release-action@v1.13.0
+        uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
           artifacts: '*'
@@ -62,12 +71,9 @@ jobs:
             [更新日志](https://github.com/EhTagTranslation/EhSyringe/blob/master/CHANGELOG.md)
           prerelease: ${{ contains(github.event.ref, '-') }}
       - name: Commit release mirror
-        run: >
+        run: |
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          && git config user.name 'github-actions[bot]'
-          && git add .
-          && git commit -am 'Release for https://github.com/EhTagTranslation/EhSyringe/tree/${{ github.event.ref }}'
-      - name: Push to release branch
-        uses: ad-m/github-push-action@master
-        with:
-          branch: release
+          git config user.name 'github-actions[bot]'
+          git add .
+          git commit -am 'Release for [${{ github.event.ref }}](https://github.com/EhTagTranslation/EhSyringe/tree/${{ github.event.ref }})'
+          git push

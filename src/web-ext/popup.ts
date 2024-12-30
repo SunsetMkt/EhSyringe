@@ -1,7 +1,8 @@
 import './polyfills';
+import './popup.less';
 import { Popup } from 'plugin/popup';
 import { Container } from 'services';
-import { isEh, isEx } from 'utils/hosts';
+import { isEh, isEx, isRepo } from 'utils/hosts';
 
 (async () => {
     const popup = Container.get(Popup);
@@ -21,15 +22,17 @@ import { isEh, isEx } from 'utils/hosts';
     const currentHost = (current?.[0]?.url && new URL(current[0].url).hostname) ?? '';
 
     if (isEx(currentHost)) {
-        document.body.classList.add('ex');
+        document.documentElement.classList.add('ehs-ex');
     } else if (isEh(currentHost)) {
-        document.body.classList.add('eh');
+        document.documentElement.classList.add('ehs-eh');
+    } else if (isRepo(currentHost)) {
+        document.documentElement.classList.add('ehs-repo');
     } else if ('matchMedia' in window) {
         const matchesDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (matchesDarkTheme) {
-            document.body.classList.add('ex');
+            document.documentElement.classList.add('ehs-ex');
         } else {
-            document.body.classList.add('eh');
+            document.documentElement.classList.add('ehs-eh');
         }
     }
 })().catch(console.error);

@@ -57,7 +57,7 @@ merge(
         '- The ': '● 您对标签的影响',
         power: '权重',
         ' with which you can affect tagging is determined by a number of factors, such as your account age and whether or not you are active on the ':
-            '取决于多种因素，例如您的帐户资历、您是否活跃于',
+            '取决于多种因素，例如您的账户资历、您是否活跃于',
         forums: '论坛等',
         '- The forums is also where ': '● 论坛也是',
         'everything about tagging is discussed': '讨论标签相关内容',
@@ -101,6 +101,9 @@ merge(
         'Enter your comments here, then hit Post Comment. If the last comment posted is yours, this will be appended to that post.':
             '在此处输入您的评论，然后点击发表评论。如果最后一条评论是您的，则新评论会被附加到最后一条评论下。',
         'Post Comment': '发表评论',
+        'Your comment is too short.': '您的评论太短了。',
+        Edit: '编辑',
+        'Edit Comment': '编辑评论',
 
         'Gallery not found. If you just added this gallery, you may have to wait a short while before it becomes available.':
             '没有找到图库。如果您刚刚添加了此图库，可能需要等待一段时间后才能变得可用。',
@@ -128,6 +131,7 @@ merge(
         [/^, added (\d\d\d\d-\d\d-\d\d \d\d:\d\d)$/, '，更新于 $1'],
         [/^Showing ([\d,]+) - ([\d,]+) of ([\d,]+) images?$/, '$1 - $2，共 $3 张图像'],
         [/^Page (\d+): /, '第 $1 页：'],
+        [/^Page (\d+)$/, '第 $1 页'],
         [/^Posted on (\d\d \w+ \d\d\d\d, \d\d:\d\d) by:\s*$/, '评论时间：$1 \xA0作者：'],
         [/^Posted on (\d\d \w+ \d\d\d\d, \d\d:\d\d)\s*/, '评论时间：$1'],
         [/^There (is|are) ([\d,]+) more comments? below the viewing threshold - $/, '还有 $2 条评论尚未显示 - '],
@@ -155,7 +159,7 @@ merge(
         ' Content has been defaced by adding content-obstructing scanmarks, censorship or advertisements beyond what is present in the original artist release, or has been intentionally degraded to the point where legibility is an issue.':
             '图库内容被污损，添加了与内容无关的扫描水印、审查或广告，超出了原作者发布的内容或被故意降低画质，以至于影响了易读性。',
         'Enter a reason for this expunge here. Note that submitting petitions with subjective reasons along the line of "I hate this content/artist/uploader/etc" are NOT valid and can cause account penalties/restrictions.':
-            '在此处输入删除的详细原因。请注意，“我讨厌此内容/艺术家/上传者”等主观理由是无效的，并且可能导致帐户处罚/限制。',
+            '在此处输入删除的详细原因。请注意，“我讨厌此内容/艺术家/上传者”等主观理由是无效的，并且可能导致账户处罚/限制。',
         'Enter the URL of the conflicting gallery, if applicable.': '如有必要，在此处输入冲突图库的 URL。',
         'Create New Petition': '提交新申请',
         'Cancel Expunge Petition': '撤回删除申请',
@@ -208,7 +212,7 @@ merge(
         'Appeals must not be submitted if the gallery should be expunged but the wrong expunge type was used.':
             '如果图库应该被删除但使用了错误的删除类型，则不得提交申诉。',
         'Note that submitting invalid appeals can lead to account restrictions/penalities.':
-            '请注意，提交无效申诉可能会导致帐户受到限制/处罚。',
+            '请注意，提交无效申诉可能会导致账户受到限制/处罚。',
         'Enter a valid reason for why this expunge petition should be revoked here.':
             '请在此处输入应撤销此删除申请的正当理由。',
         'Create New Appeal': '提交新申诉',
@@ -219,6 +223,10 @@ merge(
         'This petition is being processed and can no longer be voted on.': '此申请正在处理，无法继续投票。',
         'New expunges for this gallery can currently only be started by trusted users.':
             '目前只有可信用户能为此图库提交新的删除申请。',
+        'If you believe that the gallery should be expunged, please make a post in the ':
+            '如果您认为此图库应当被删除，请在 ',
+        'Expunging, Appealing and Reverting Assistance': '删除、申诉和恢复帮助',
+        ' thread.': ' 主题中发表帖子。',
     },
     [
         [/^(\d\d\d\d-\d\d-\d\d \d\d:\d\d) by (.*)$/, '$1 由 $2'],
@@ -243,7 +251,7 @@ merge(
         'Reversion/Split/Undisown Request': '回退/拆分/恢复所有权请求',
 
         'If you log on with an account, we will remember your provided contact details.':
-            '如果您使用帐户登录，我们将记住您提供的联系信息。',
+            '如果您使用账户登录，我们将记住您提供的联系信息。',
         'We remember and automatically fill in any previous contact details you have entered.':
             '我们会记住并自动填充您曾经输入的联系信息。',
         'Your email address': '您的电子邮件地址',
@@ -257,18 +265,18 @@ merge(
         Optional: '可选',
         'Phone Number': '电话号码',
         Address: '地址',
-        'Your contact address': '您的联系地址',
+        'Your residential home address': '您的住宅地址',
         City: '城市',
         'Your city of residence': '您居住的城市',
         'State / Province': '州 / 省',
         'Your state or province of residence, if applicable': '您居住的州或省，如果适用',
         Country: '国家',
         'Your country of residence': '您居住的国家',
-        'Describe the original work': '描述原作',
-        'Describe the nature of the copyrighted work.': '描述版权作品的性质。',
-        'Include links to original work or evidence of source material.': '包括原作或源材料的链接。',
-        'Please describe the nature of this work and provide any relevant links.':
-            '请描述此作品的性质并提供任何相关链接。',
+        'Describe the nature of the infringement': '描述侵权性质',
+        'Elaborate on why this gallery is infringing on your copyrighted work. Include links to where the original work can be purchased, or evidence of source material.':
+            '详细说明为何此图库侵犯了您的版权。包括原作购买链接或源材料证据。',
+        'Please elaborate on why this gallery infringes on your copyright. If this work is for sale, provide links to where it can be legally purchased.':
+            '请详细说明为何此图库侵犯了您的版权。如果此作品正在出售，请提供可以合法购买的链接。',
         'Digital signature': '数字签名',
         'Enter your name to sign this submission': '输入您的姓名以签署此提交',
         Acknowledgement: '确认',
